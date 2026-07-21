@@ -10,17 +10,17 @@ cd BACKEND
 npm install
 ```
 3. Konfigurasi `.env`
--Buat file `.env` di root folder BACKEND
--Salin isi dari `env.example` ke dalam file `.env` yang baru dibuat.
--Sesuaikan kredensial Database dan URL Database PostgreSQL (bisa dilakukan setelah Step 4.1).
+- Buat file `.env` di root folder BACKEND
+- Salin isi dari `env.example` ke dalam file `.env` yang baru dibuat.
+- Sesuaikan kredensial Database dan URL Database PostgreSQL (bisa dilakukan setelah Step 4.1).
 
 4. Setup Database & Prisma
--Buka pgAdmin 4, lalu buat db_monitoring_ip (biarkan kosong, jangan diisi). Setelahnya, kembali ke Step 3.3
--Jalankan terminal untuk copy Database dari `schema.prisma` ke PostgreSQL
+- Buka pgAdmin 4, lalu buat db_monitoring_ip (biarkan kosong, jangan diisi). Setelahnya, kembali ke Step 3.3
+- Jalankan terminal untuk copy Database dari `schema.prisma` ke PostgreSQL
 ```bash
 npx prisma db push
 ```
--Generate dependencies Prisma
+- Generate dependencies Prisma
 ```bash
 npx prisma generate
 ```
