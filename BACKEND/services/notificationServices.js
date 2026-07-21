@@ -1,6 +1,4 @@
-// services/notificationService.js
-// VERSI SEMENTARA -- belum benar-benar kirim WhatsApp.
-// Diganti dengan panggilan WhatsApp Business API asli di Langkah 13.
+/* Sementara, belum benar-benar kirim API Wangsaff (ini belum disambungin ke frontend). */
 async function sendStatusNotification(payload) {
   console.log(`[STUB NOTIFIKASI] AP "${payload.nama}" (${payload.ip_address}) -> ${payload.status.toUpperCase()} pada ${payload.waktu}`);
   return { success: true };
