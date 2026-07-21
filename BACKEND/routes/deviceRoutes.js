@@ -1,12 +1,9 @@
-// routes/deviceRoutes.js
-// FR-07, FR-08, FR-09, FR-10: endpoint read-only murni untuk dashboard.
-// TIDAK ADA endpoint di sini yang memicu ping manual (FR-10 No-Trigger Principle).
 const express = require('express');
 const prisma = require('../prisma/prisma.dbPool');
 
 const router = express.Router();
 
-// GET /api/devices -> daftar semua AP + status terakhir (FR-08, FR-09)
+/* GET /api/devices, daftar semua AP dan status terakhirnya. */
 router.get('/devices', async (req, res) => {
   try {
     const { id_lantai } = req.query;
@@ -30,7 +27,7 @@ router.get('/devices', async (req, res) => {
   }
 });
 
-// GET /api/summary -> ringkasan total (FR-07)
+/* GET /api/summary, ringkasan total (belum ada di frontend, baru fungsi untuk testing http req, kemungkinan dihapus). */
 router.get('/summary', async (req, res) => {
   try {
     const [total, online, offline, unknown] = await Promise.all([
@@ -45,7 +42,7 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-// GET /api/logs -> 200 log terakhir, untuk halaman Logs
+/* GET /api/logs, diambil 200 log terakhir, untuk halaman Logs. */
 router.get('/logs', async (req, res) => {
   try {
     const logs = await prisma.log.findMany({
@@ -61,8 +58,7 @@ router.get('/logs', async (req, res) => {
 
 const { z } = require('zod');
 
-// Regex IPv4 ketat: mencegah celah Command Injection (NFR-04),
-// karena IP ini nanti dipakai proses ping tingkat OS.
+/* Regex IPv4 agar input IP sesuai standar. */
 const IPV4_REGEX =
   /^(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}$/;
 
@@ -73,7 +69,7 @@ const deviceSchema = z.object({
   id_lantai: z.number().int().positive().optional(),
 });
 
-// POST /api/devices -> Tambah AP baru (FR-11)
+/* POST /api/devices, Tambah AP baru. */
 router.post('/devices', async (req, res) => {
   const parsed = deviceSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -87,14 +83,14 @@ router.post('/devices', async (req, res) => {
     res.status(201).json({ success: true, data: device });
   } catch (err) {
     if (err.code === 'P2002') {
-      // Prisma unique constraint violation (ip_address sudah terdaftar)
+      /* Pesan kalau IP Address duplikat. */
       return res.status(409).json({ success: false, error: { message: 'IP address sudah terdaftar' } });
     }
     res.status(500).json({ success: false, error: { message: err.message } });
   }
 });
 
-// PUT /api/devices/:id -> Ubah data AP (FR-11, tambahan)
+/* PUT /api/devices/:id, Ubah data AP. */
 router.put('/devices/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
@@ -123,7 +119,7 @@ router.put('/devices/:id', async (req, res) => {
   }
 });
 
-// DELETE /api/devices/:id -> Hapus AP (FR-11)
+/* DELETE /api/devices/:id, Hapus AP. */
 router.delete('/devices/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
