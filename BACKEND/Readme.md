@@ -5,7 +5,7 @@ Panduan singkat untuk menjalankan Backend secara lokal
 ```bash
 cd BACKEND
 ```
-2. Install Dependencies (Daftarnya ada pada `package.json`)
+2. Install dependencies (daftarnya ada pada `package.json`)
 ```bash
 npm install
 ```
