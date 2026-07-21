@@ -1,4 +1,3 @@
-// workers/scheduler.js
 const cron = require('node-cron');
 const prisma = require('../prisma/prisma.dbPool');
 const { pingMany } = require('../services/pingServices');
@@ -50,7 +49,6 @@ async function processDeviceResult(result, idSesi) {
     console.log(`[ping] ${nama} (${ip_address}) RTO -- counter: ${newCounter}/${OFFLINE_THRESHOLD}`);
 
     if (newCounter >= OFFLINE_THRESHOLD && status_terakhir !== 'offline') {
-      // Update status + log dicatat atomik lewat transaction (dua-duanya harus sukses bersamaan)
       await prisma.$transaction([
         prisma.access_point.update({ where: { id_ap }, data: { status_terakhir: 'offline' } }),
         prisma.log.create({ data: { id_ap, id_sesi: idSesi, status: 'offline', response_time: null } }),
@@ -65,7 +63,7 @@ async function processDeviceResult(result, idSesi) {
         },
       });
     }
-    // Belum capai threshold: hanya counter bertambah, tanpa log/notif (anti-spam, FR-06)
+
   } else {
     await prisma.access_point.update({ where: { id_ap }, data: { fail_counter: 0 } });
     console.log(`[ping] ${nama} (${ip_address}) OK -- ${responseTime}ms`);
@@ -85,10 +83,8 @@ async function processDeviceResult(result, idSesi) {
         },
       });
     } else if (status_terakhir === 'unknown') {
-      // AP baru, ping pertama berhasil -> set online tanpa notifikasi (bukan "perubahan status")
       await prisma.access_point.update({ where: { id_ap }, data: { status_terakhir: 'online' } });
     }
-    // Status sudah online sebelumnya: tidak ada perubahan, tanpa log/notif
   }
 }
 
