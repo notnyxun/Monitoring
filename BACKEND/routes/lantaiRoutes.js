@@ -1,10 +1,9 @@
-// routes/lantaiRoutes.js
 const express = require('express');
 const prisma = require('../prisma/prisma.dbPool');
 
 const router = express.Router();
 
-// GET /api/lantai -> daftar lantai + ringkasan jumlah AP (untuk carousel Dashboard & dropdown form)
+/* GET /api/lantai, ini daftar lantai plus ringkasan jumlah AP di dashaboard. */
 router.get('/lantai', async (req, res) => {
   try {
     const lantaiList = await prisma.lantai.findMany({
