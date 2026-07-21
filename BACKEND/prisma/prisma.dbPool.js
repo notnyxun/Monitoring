@@ -1,4 +1,3 @@
-// prisma/prisma.dbPool.js
 const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('../generated/prisma/client');
 
