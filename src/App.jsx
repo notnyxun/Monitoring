@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // --- KOMPONEN: LOGIN PAGE ---
 const LoginPage = ({ onLogin }) => (
@@ -24,85 +24,319 @@ const LoginPage = ({ onLogin }) => (
 
 // --- KOMPONEN: DASHBOARD AWAL (CAROUSEL) ---
 const DashboardHome = ({ onSelectFloor }) => {
-  const floors = [1, 2, 3, 4, 5];
+  const [floors, setFloors] = useState([]);
+  const API_URL = 'http://localhost:3000/api';
+
+  useEffect(() => {
+    fetch(`${API_URL}/lantai`)
+      .then((res) => res.json())
+      .then((json) => { if (json.success) setFloors(json.data); })
+      .catch(() => {});
+  }, []);
+
   return (
     <div className="p-8">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Topologi Sistem</h2>
         <p className="text-sm text-gray-500 mt-1">Pilih lantai untuk memantau status Access Point.</p>
       </div>
-      
-      {/* Scroll Carousel */}
+
       <div className="flex overflow-x-auto pb-8 space-x-6 snap-x">
-        {floors.map(floor => (
-          <div 
-            key={floor} 
-            onClick={() => onSelectFloor(floor)}
+        {floors.map((floor) => (
+          <div
+            key={floor.id_lantai}
+            onClick={() => onSelectFloor(floor.id_lantai)}
             className="snap-center min-w-[250px] h-[350px] bg-[#1a233a] rounded-xl shadow-lg flex flex-col items-center justify-center cursor-pointer hover:bg-[#253250] transition-colors border-2 border-transparent hover:border-blue-400"
           >
             <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
             </div>
-            <h3 className="text-xl font-bold text-white">LANTAI {floor}</h3>
-            <p className="text-sm text-blue-200 mt-2">35 Access Points</p>
+            <h3 className="text-xl font-bold text-white">{floor.nama_lantai.toUpperCase()}</h3>
+            <p className="text-sm text-blue-200 mt-2">{floor.total} Access Points</p>
+            <p className="text-xs mt-1">
+              <span className="text-green-400">{floor.online} online</span>
+              {' · '}
+              <span className="text-red-400">{floor.offline} offline</span>
+            </p>
           </div>
         ))}
-      </div>
-      {/* Indikator Carousel */}
-      <div className="flex justify-center space-x-2 mt-2">
-        <span className="w-3 h-3 rounded-full bg-[#1565c0]"></span>
-        <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-        <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-        <span className="w-3 h-3 rounded-full bg-gray-300"></span>
-        <span className="w-3 h-3 rounded-full bg-gray-300"></span>
       </div>
     </div>
   );
 };
 
 // --- KOMPONEN: LOGS PAGE ---
-const LogsPage = () => (
-  <div className="p-8">
-    <h2 className="text-2xl font-bold text-gray-800 uppercase tracking-wide border-b pb-2 mb-6">Manajemen Logs</h2>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <div className="bg-white p-5 rounded-lg border shadow-sm"><span className="text-xs font-bold text-gray-500">TOTAL LOG</span><span className="block text-3xl font-bold mt-2">35</span></div>
-      <div className="bg-white p-5 rounded-lg border border-green-400 shadow-sm"><span className="text-xs font-bold text-gray-500">AP KEMBALI ONLINE</span><span className="block text-3xl font-bold text-green-500 mt-2">30</span></div>
-      <div className="bg-white p-5 rounded-lg border border-red-400 shadow-sm"><span className="text-xs font-bold text-gray-500">AP OFFLINE</span><span className="block text-3xl font-bold text-red-500 mt-2">05</span></div>
+const LogsPage = () => {
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const API_URL = 'http://localhost:3000/api';
+
+  useEffect(() => {
+    fetch(`${API_URL}/logs`)
+      .then((res) => res.json())
+      .then((json) => { if (json.success) setLogs(json.data); })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const total = logs.length;
+  const kembaliOnline = logs.filter((l) => l.status === 'online').length;
+  const offline = logs.filter((l) => l.status === 'offline').length;
+
+  if (loading) return <div className="p-8 text-gray-500">Memuat log...</div>;
+
+  return (
+    <div className="p-8">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Manajemen Logs</h2>
+        <p className="text-sm text-gray-500 mt-1">Monitoring perubahan status tiap Access Point.</p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-5 rounded-lg border">
+          <span className="text-xs font-bold text-gray-500">TOTAL LOG</span>
+          <span className="block text-3xl font-bold mt-2">{total}</span>
+        </div>
+        <div className="bg-white p-5 rounded-lg border border-green-400">
+          <span className="text-xs font-bold text-gray-500">ACCESS POINT KEMBALI ONLINE</span>
+          <span className="block text-3xl font-bold text-green-500 mt-2">{kembaliOnline}</span>
+        </div>
+        <div className="bg-white p-5 rounded-lg border border-red-400">
+          <span className="text-xs font-bold text-gray-500">ACCESS POINT OFFLINE</span>
+          <span className="block text-3xl font-bold text-red-500 mt-2">{offline}</span>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg border overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-[#1565c0] text-white text-xs uppercase">
+            <tr>
+              <th className="p-4">Timestamp</th>
+              <th className="p-4">Device Name</th>
+              <th className="p-4">IP Address</th>
+              <th className="p-4">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y text-sm">
+            {logs.map((log) => (
+              <tr key={log.id_log}>
+                <td className="p-4 text-gray-500">{new Date(log.waktu_ping).toLocaleString('id-ID')}</td>
+                <td className="p-4 font-bold">{log.access_point?.nama || '-'}</td>
+                <td className="p-4">{log.access_point?.ip_address || '-'}</td>
+                <td className="p-4">
+                  <span className={`px-2 py-1 text-[10px] rounded font-bold border ${log.status === 'online' ? 'text-green-500 border-green-500' : 'text-red-500 border-red-500'}`}>
+                    {log.status === 'online' ? 'KEMBALI ONLINE' : 'OFFLINE'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-      <table className="w-full text-left">
-        <thead className="bg-[#1565c0] text-white text-xs uppercase">
-          <tr><th className="p-4">Timestamp</th><th className="p-4">Nama Perangkat</th><th className="p-4">IP Address</th><th className="p-4">Status</th></tr>
-        </thead>
-        <tbody className="divide-y text-sm">
-          <tr className="hover:bg-gray-50"><td className="p-4">2026-07-18 14:02:11</td><td className="p-4 font-bold">AP01-LT01</td><td className="p-4 text-gray-500">192.168.1.10</td><td className="p-4"><span className="px-2 py-1 text-[10px] rounded border border-red-500 text-red-500">OFFLINE</span></td></tr>
-          <tr className="hover:bg-gray-50"><td className="p-4">2026-07-18 13:58:45</td><td className="p-4 font-bold">AP04-LT05</td><td className="p-4 text-gray-500">192.168.5.11</td><td className="p-4"><span className="px-2 py-1 text-[10px] rounded border border-green-500 text-green-500">KEMBALI ONLINE</span></td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-);
+  );
+};
 
 // --- KOMPONEN: CONFIGURATION PAGE ---
-const ConfigPage = () => (
-  <div className="p-8">
-    <div className="flex justify-between items-center border-b pb-2 mb-6">
-      <h2 className="text-2xl font-bold text-gray-800 uppercase tracking-wide">Manajemen Access Point</h2>
-      <button className="bg-[#1565c0] text-white px-4 py-2 rounded text-sm font-bold">+ Tambah Perangkat</button>
-    </div>
-    <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-      <table className="w-full text-left">
-        <thead className="bg-[#1565c0] text-white text-xs uppercase">
-          <tr><th className="p-4">Nama Perangkat</th><th className="p-4">IP Address</th><th className="p-4">Lokasi</th><th className="p-4">Status</th><th className="p-4 text-center">Tindakan</th></tr>
-        </thead>
-        <tbody className="divide-y text-sm">
-          <tr className="hover:bg-gray-50"><td className="p-4 font-bold">AP01-LT01</td><td className="p-4 text-gray-500">192.168.1.10</td><td className="p-4">Lantai 1</td><td className="p-4"><span className="px-2 py-1 text-[10px] rounded border border-red-500 text-red-500">OFFLINE</span></td><td className="p-4 text-center text-blue-600 cursor-pointer">Edit | Hapus</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-);
+const ConfigPage = () => {
+  const [devices, setDevices] = useState([]);
+  const [lantaiList, setLantaiList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [editingDevice, setEditingDevice] = useState(null);
+  const [formData, setFormData] = useState({ nama: '', ip_address: '', lokasi: '', id_lantai: '' });
+  const [formError, setFormError] = useState(null);
 
+  const API_URL = 'http://localhost:3000/api';
+
+  const fetchDevices = () => {
+    fetch(`${API_URL}/devices`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success) setDevices(json.data);
+        else setError('Gagal memuat data');
+      })
+      .catch(() => setError('Tidak bisa terhubung ke server'))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchDevices();
+    fetch(`${API_URL}/lantai`)
+      .then((res) => res.json())
+      .then((json) => { if (json.success) setLantaiList(json.data); })
+      .catch(() => {});
+  }, []);
+
+  const openAddModal = () => {
+    setEditingDevice(null);
+    setFormData({ nama: '', ip_address: '', lokasi: '', id_lantai: '' });
+    setFormError(null);
+    setShowModal(true);
+  };
+
+  const openEditModal = (device) => {
+    setEditingDevice(device);
+    setFormData({
+      nama: device.nama,
+      ip_address: device.ip_address,
+      lokasi: device.lokasi || '',
+      id_lantai: device.id_lantai || '',
+    });
+    setFormError(null);
+    setShowModal(true);
+  };
+
+  const handleSubmit = async () => {
+    setFormError(null);
+    const isEdit = Boolean(editingDevice);
+    const url = isEdit ? `${API_URL}/devices/${editingDevice.id_ap}` : `${API_URL}/devices`;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const payload = {
+      ...formData,
+      id_lantai: formData.id_lantai ? Number(formData.id_lantai) : undefined,
+    };
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const json = await res.json();
+      if (!json.success) {
+        setFormError(json.error?.message || 'Gagal menyimpan data');
+        return;
+      }
+      setShowModal(false);
+      fetchDevices();
+    } catch {
+      setFormError('Tidak bisa terhubung ke server');
+    }
+  };
+
+  const handleDelete = async (device) => {
+    const confirmed = window.confirm(`Yakin mau hapus "${device.nama}" (${device.ip_address})?`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`${API_URL}/devices/${device.id_ap}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) fetchDevices();
+      else alert(json.error?.message || 'Gagal menghapus');
+    } catch {
+      alert('Tidak bisa terhubung ke server');
+    }
+  };
+
+  return (
+    <div className="p-8">
+      <div className="flex justify-between items-center border-b pb-2 mb-6">
+        <h2 className="text-2xl font-bold text-gray-800 uppercase tracking-wide">Manajemen Access Point</h2>
+        <button onClick={openAddModal} className="bg-[#1565c0] text-white px-4 py-2 rounded text-sm font-bold">
+          + Tambah Perangkat
+        </button>
+      </div>
+
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+      {loading && <p className="text-gray-500 mb-4">Memuat data...</p>}
+
+      <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-[#1565c0] text-white text-xs uppercase">
+            <tr>
+              <th className="p-4">Nama Perangkat</th>
+              <th className="p-4">IP Address</th>
+              <th className="p-4">Lantai</th>
+              <th className="p-4">Lokasi</th>
+              <th className="p-4">Status</th>
+              <th className="p-4 text-center">Tindakan</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y text-sm">
+            {devices.map((d) => (
+              <tr key={d.id_ap} className="hover:bg-gray-50">
+                <td className="p-4 font-bold">{d.nama}</td>
+                <td className="p-4 text-gray-500">{d.ip_address}</td>
+                <td className="p-4">{d.lantai?.nama_lantai || '-'}</td>
+                <td className="p-4">{d.lokasi || '-'}</td>
+                <td className="p-4">
+                  <span className={`px-2 py-1 text-[10px] rounded border ${d.status_terakhir === 'online' ? 'border-green-500 text-green-500' : d.status_terakhir === 'offline' ? 'border-red-500 text-red-500' : 'border-gray-400 text-gray-400'}`}>
+                    {d.status_terakhir.toUpperCase()}
+                  </span>
+                </td>
+                <td className="p-4 text-center text-sm">
+                  <button onClick={() => openEditModal(d)} className="text-blue-600 hover:underline mr-3">Edit</button>
+                  <button onClick={() => handleDelete(d)} className="text-red-600 hover:underline">Hapus</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      
+      {showModal && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-96 shadow-xl">
+            <h3 className="text-lg font-bold mb-4">{editingDevice ? 'Edit Perangkat' : 'Tambah Perangkat'}</h3>
+
+            {formError && <p className="text-red-500 text-sm mb-3">{formError}</p>}
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Nama Perangkat</label>
+                <input
+                  type="text"
+                  value={formData.nama}
+                  onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                  className="w-full p-2 border rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">IP Address</label>
+                <input
+                  type="text"
+                  value={formData.ip_address}
+                  onChange={(e) => setFormData({ ...formData, ip_address: e.target.value })}
+                  placeholder="192.168.1.10"
+                  className="w-full p-2 border rounded-md text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Lantai</label>
+                <select
+                  value={formData.id_lantai}
+                  onChange={(e) => setFormData({ ...formData, id_lantai: e.target.value })}
+                  className="w-full p-2 border rounded-md text-sm bg-white"
+                >
+                  <option value="">-- Pilih Lantai --</option>
+                  {lantaiList.map((l) => (
+                    <option key={l.id_lantai} value={l.id_lantai}>{l.nama_lantai}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Lokasi (contoh: Ruang Komisi B)</label>
+                <input
+                  type="text"
+                  value={formData.lokasi}
+                  onChange={(e) => setFormData({ ...formData, lokasi: e.target.value })}
+                  className="w-full p-2 border rounded-md text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm rounded-md border">Batal</button>
+              <button onClick={handleSubmit} className="px-4 py-2 text-sm rounded-md bg-[#1565c0] text-white font-bold">Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 // --- KOMPONEN: PROFILE PAGE ---
 const ProfilePage = () => (
   <div className="p-8 max-w-2xl mx-auto">
@@ -118,6 +352,59 @@ const ProfilePage = () => (
     </div>
   </div>
 );
+
+
+
+// --- KOMPONEN: DETAIL LANTAI ---
+const FloorDetail = ({ idLantai }) => {
+  const [devices, setDevices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const API_URL = 'http://localhost:3000/api';
+
+  useEffect(() => {
+    fetch(`${API_URL}/devices?id_lantai=${idLantai}`)
+      .then((res) => res.json())
+      .then((json) => { if (json.success) setDevices(json.data); })
+      .finally(() => setLoading(false));
+  }, [idLantai]);
+
+  const total = devices.length;
+  const online = devices.filter((d) => d.status_terakhir === 'online').length;
+  const offline = devices.filter((d) => d.status_terakhir === 'offline').length;
+
+  if (loading) return <div className="p-8 text-gray-500">Memuat data lantai...</div>;
+
+  return (
+    <div className="p-8">
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-5 rounded-lg border"><span className="text-xs font-bold text-gray-500">TOTAL AP</span><span className="block text-3xl font-bold mt-2">{total}</span></div>
+        <div className="bg-white p-5 rounded-lg border border-green-400"><span className="text-xs font-bold text-gray-500">ONLINE</span><span className="block text-3xl font-bold text-green-500 mt-2">{online}</span></div>
+        <div className="bg-white p-5 rounded-lg border border-red-400"><span className="text-xs font-bold text-gray-500">OFFLINE</span><span className="block text-3xl font-bold text-red-500 mt-2">{offline}</span></div>
+      </div>
+      <div className="bg-white rounded-lg border overflow-hidden">
+        <table className="w-full text-left">
+          <thead className="bg-[#1565c0] text-white text-xs uppercase">
+            <tr><th className="p-4">NAMA</th><th className="p-4">IP</th><th className="p-4">LOKASI</th><th className="p-4">STATUS</th></tr>
+          </thead>
+          <tbody className="divide-y text-sm">
+            {devices.map((d) => (
+              <tr key={d.id_ap}>
+                <td className="p-4 font-bold">{d.nama}</td>
+                <td className="p-4">{d.ip_address}</td>
+                <td className="p-4">{d.lokasi || '-'}</td>
+                <td className="p-4">
+                  <span className={`px-2 rounded font-bold text-[10px] border ${d.status_terakhir === 'online' ? 'text-green-500 border-green-500' : d.status_terakhir === 'offline' ? 'text-red-500 border-red-500' : 'text-gray-400 border-gray-400'}`}>
+                    {d.status_terakhir.toUpperCase()}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
 
 // --- MAIN APP COMPONENT ---
 export default function App() {
@@ -212,26 +499,8 @@ export default function App() {
         <div className="overflow-y-auto h-full">
           {activePage === 'dashboard' && <DashboardHome onSelectFloor={(floor) => { setSelectedFloor(floor); navigateTo('floor'); }} />}
           
-          {/* Detail Lantai (Menggunakan kode sebelumnya, disederhanakan) */}
-          {activePage === 'floor' && (
-            <div className="p-8">
-              <div className="grid grid-cols-3 gap-6 mb-8">
-                 <div className="bg-white p-5 rounded-lg border"><span className="text-xs font-bold text-gray-500">TOTAL AP</span><span className="block text-3xl font-bold mt-2">35</span></div>
-                 <div className="bg-white p-5 rounded-lg border border-green-400"><span className="text-xs font-bold text-gray-500">ONLINE</span><span className="block text-3xl font-bold text-green-500 mt-2">30</span></div>
-                 <div className="bg-white p-5 rounded-lg border border-red-400"><span className="text-xs font-bold text-gray-500">OFFLINE</span><span className="block text-3xl font-bold text-red-500 mt-2">05</span></div>
-              </div>
-              <div className="bg-white rounded-lg border overflow-hidden">
-                <table className="w-full text-left">
-                  <thead className="bg-[#1565c0] text-white text-xs uppercase">
-                    <tr><th className="p-4">NAMA</th><th className="p-4">IP</th><th className="p-4">LOKASI</th><th className="p-4">STATUS</th></tr>
-                  </thead>
-                  <tbody className="divide-y text-sm">
-                    <tr><td className="p-4 font-bold">AP01-LT0{selectedFloor}</td><td className="p-4">192.168.{selectedFloor}.10</td><td className="p-4">Lantai {selectedFloor}</td><td className="p-4"><span className="text-red-500 border border-red-500 px-2 rounded font-bold text-[10px]">OFFLINE</span></td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          {/* Detail */}
+          {activePage === 'floor' && <FloorDetail idLantai={selectedFloor} />}
 
           {activePage === 'logs' && <LogsPage />}
           {activePage === 'config' && <ConfigPage />}
