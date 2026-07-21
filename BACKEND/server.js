@@ -1,19 +1,18 @@
-// server.js
 const express = require('express');
-const cors = require('cors'); // <-- baris baru
+const cors = require('cors'); 
 
 require('dotenv').config();
 
 const prisma = require('./prisma/prisma.dbPool');
 const { startScheduler } = require('./workers/scheduler');
-const deviceRoutes = require('./routes/deviceRoutes'); // <-- baris baru
-const lantaiRoutes = require('./routes/lantaiRoutes'); // <-- baris baru
+const deviceRoutes = require('./routes/deviceRoutes'); 
+const lantaiRoutes = require('./routes/lantaiRoutes'); 
 const notifikasiRoutes = require('./routes/notifikasiRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors()); // <-- baris baru, izinkan request dari origin manapun (untuk development)
+app.use(cors()); 
 app.use(express.json());
 
 
@@ -26,8 +25,8 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-app.use('/api', deviceRoutes); // <-- baris baru
-app.use('/api', lantaiRoutes); // <-- baris baru
+app.use('/api', deviceRoutes); 
+app.use('/api', lantaiRoutes); 
 app.use('/api', notifikasiRoutes);
 
 app.listen(PORT, () => {
