@@ -1,10 +1,9 @@
-// routes/notifikasiRoutes.js
 const express = require('express');
 const prisma = require('../prisma/prisma.dbPool');
 
 const router = express.Router();
 
-// GET /api/notifikasi -> notifikasi terbaru untuk bar lonceng
+/* GET /api/notifikasi, ini notifikasi terbaru untuk bar lonceng di frontend. */
 router.get('/notifikasi', async (req, res) => {
   try {
     const notifikasi = await prisma.notifikasi.findMany({
