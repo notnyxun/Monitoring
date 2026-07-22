@@ -11,7 +11,7 @@ Content-Type: application/json
   
 }
 
-### Test 3: Ubah AP (ganti angka 3 di URL sesuai id_ap hasil Test 2)
+### Test 3: Ubah AP )
 PUT http://localhost:3000/api/devices/3
 Content-Type: application/json
 
@@ -19,7 +19,7 @@ Content-Type: application/json
   "nama": "AP Test 3 (Updated)"
 }
 
-### Test 4: Hapus AP (ganti angka 3 sesuai id_ap yang mau dihapus)
+### Test 4: Hapus AP 
 DELETE http://localhost:3000/api/devices/3
 
 ### Test 5: Validasi IP salah (harus gagal dengan pesan jelas, bukan error 500)
