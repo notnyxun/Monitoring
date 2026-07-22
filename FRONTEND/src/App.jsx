@@ -434,6 +434,15 @@ export default function App() {
     setShowNotif(false);
   };
 
+  // Ini untuk ubah kalimat di Header
+  const pageTitles = {
+  dashboard: 'Overview',
+  floor: `LANTAI ${selectedFloor}`,
+  logs: 'Manajemen Logs',
+  config: 'Konfigurasi Perangkat',
+  profile: 'Profil Saya',
+};
+
   return (
     <div className="flex h-screen bg-[#f8f9fa] font-sans text-gray-800">
       
@@ -471,7 +480,7 @@ export default function App() {
               </button>
             )}
             <h1 className="font-bold text-lg uppercase">
-              {activePage === 'dashboard' ? 'Overview' : activePage === 'floor' ? `LANTAI ${selectedFloor}` : activePage}
+                {pageTitles[activePage] || activePage}
             </h1>
           </div>
 
