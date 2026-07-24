@@ -1,0 +1,69 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model access_point {
+  id_ap           Int          @id @default(autoincrement())
+  id_lantai       Int?
+  ip_address      String       @unique @db.VarChar(45)
+  mac_address     String?      @db.VarChar(17)
+  lokasi          String?      @db.VarChar(150)
+  nama            String       @db.VarChar(100)
+  status_terakhir String?      @default("unknown") @db.VarChar(20)
+  fail_counter    Int?         @default(0)
+  updated_at      DateTime?    @default(now()) @db.Timestamp(6)
+  lantai          lantai?      @relation(fields: [id_lantai], references: [id_lantai], onUpdate: NoAction)
+  log             log[]
+  notifikasi      notifikasi[]
+}
+
+model lantai {
+  id_lantai    Int            @id @default(autoincrement())
+  nama_lantai  String         @db.VarChar(100)
+  deskripsi    String?
+  access_point access_point[]
+}
+
+model log {
+  id_log        Int           @id @default(autoincrement())
+  id_ap         Int?
+  id_sesi       Int?
+  status        String        @db.VarChar(20)
+  waktu_ping    DateTime      @default(now()) @db.Timestamp(6)
+  response_time Int?
+  access_point  access_point? @relation(fields: [id_ap], references: [id_ap], onDelete: Cascade, onUpdate: NoAction)
+  sesi          sesi?         @relation(fields: [id_sesi], references: [id_sesi], onUpdate: NoAction)
+}
+
+model notifikasi {
+  id_notif     Int           @id @default(autoincrement())
+  id_ap        Int?
+  id_user      Int?
+  waktu        DateTime      @default(now()) @db.Timestamp(6)
+  pesan        String
+  access_point access_point? @relation(fields: [id_ap], references: [id_ap], onDelete: Cascade, onUpdate: NoAction)
+  user         user?         @relation(fields: [id_user], references: [id_user], onUpdate: NoAction)
+}
+
+model sesi {
+  id_sesi Int       @id @default(autoincrement())
+  start   DateTime  @default(now()) @db.Timestamp(6)
+  end     DateTime? @db.Timestamp(6)
+  delay   Int?
+  log     log[]
+}
+
+model user {
+  id_user    Int          @id @default(autoincrement())
+  nama       String       @db.VarChar(100)
+  email      String       @unique @db.VarChar(150)
+  password   String       @db.VarChar(255)
+  role       String?      @default("user") @db.VarChar(50)
+  notifikasi notifikasi[]
+}
