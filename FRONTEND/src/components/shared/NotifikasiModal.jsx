@@ -31,7 +31,7 @@ export const NotifikasiModal = ({ notifikasiList, isOpen, onClose }) => {
                   </span>
                   <p className="text-gray-500 text-xs mt-1">{n.pesan}</p>
                   <p className="text-gray-400 text-[10px] mt-1">
-                    {new Date(n.waktu).toLocaleString('id-ID')}
+                    {new Date(n.waktu).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}
                   </p>
                 </div>
               );
