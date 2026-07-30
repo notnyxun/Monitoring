@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState} from 'react';
 import { useLantai } from '../../hooks/useLantai';
 
 export const DashboardHome = ({ onSelectFloor }) => {
@@ -26,9 +26,12 @@ export const DashboardHome = ({ onSelectFloor }) => {
         <button
           onClick={handlePrevious}
           disabled={carouselIndex === 0}
-          className="px-4 py-2 bg-[#1565c0] text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold flex items-center gap-2 text-sm"
+          aria-label="Sebelumnya"
+          className="p-3 bg-[#1565c0] text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-sm"
         >
-          <span>←</span> Sebelumnya
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+          </svg>
         </button>
 
         {/* Carousel Container */}
@@ -66,9 +69,12 @@ export const DashboardHome = ({ onSelectFloor }) => {
         <button
           onClick={handleNext}
           disabled={carouselIndex + itemsPerView >= lantai.length}
-          className="px-4 py-2 bg-[#1565c0] text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-semibold flex items-center gap-2 text-sm"
+          aria-label="Berikutnya"
+          className="p-3 bg-[#1565c0] text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center text-sm"
         >
-          Selanjutnya <span>→</span>
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+          </svg>
         </button>
       </div>
 
