@@ -44,7 +44,7 @@ export const LogsPage = () => {
           <tbody className="divide-y text-sm">
             {logs.map((log) => (
               <tr key={log.id_log}>
-                <td className="p-4 text-gray-500">{new Date(log.waktu_ping).toLocaleString('id-ID')}</td>
+                <td className="p-4 text-gray-500">{new Date(log.waktu_ping).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' })}</td>
                 <td className="p-4 font-bold">{log.access_point?.nama || '-'}</td>
                 <td className="p-4">{log.access_point?.ip_address || '-'}</td>
                 <td className="p-4">
