@@ -32,9 +32,12 @@ export const Header = ({
         {activePage === 'floor' && (
           <button 
             onClick={() => navigateTo('dashboard')} 
-            className="mr-3 px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded font-bold"
+            aria-label="Kembali ke dashboard"
+            className="mr-3 p-3 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
           >
-            ← Kembali
+            <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
         )}
         <h1 className="font-bold text-lg uppercase">
