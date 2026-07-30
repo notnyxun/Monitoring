@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const prisma = require('../prisma/prisma.dbPool');
 const { pingMany } = require('../services/pingServices');
-const { sendStatusNotification } = require('../services/notificationServices');
+const { sendStatusNotification, sendOfflineEmail } = require('../services/notificationServices');
 
 const OFFLINE_THRESHOLD = Number(process.env.OFFLINE_THRESHOLD || 3);
 
@@ -11,7 +11,7 @@ async function runPingSession() {
 
   try {
     const devices = await prisma.access_point.findMany({
-      select: { id_ap: true, ip_address: true, nama: true, status_terakhir: true, fail_counter: true },
+      select: { id_ap: true, ip_address: true, nama: true, lokasi: true, status_terakhir: true, fail_counter: true },
     });
 
     if (devices.length === 0) {
@@ -38,7 +38,7 @@ async function runPingSession() {
 }
 
 async function processDeviceResult(result, idSesi) {
-  const { id_ap, alive, responseTime, status_terakhir, fail_counter, nama, ip_address } = result;
+  const { id_ap, alive, responseTime, status_terakhir, fail_counter, nama, ip_address, lokasi } = result;
 
   if (!alive) {
     const newCounter = fail_counter + 1;
@@ -54,12 +54,15 @@ async function processDeviceResult(result, idSesi) {
         prisma.log.create({ data: { id_ap, id_sesi: idSesi, status: 'offline', response_time: null } }),
       ]);
 
-      const waktu = new Date().toLocaleString('id-ID');
-      const notif = await sendStatusNotification({ nama, ip_address, status: 'offline', waktu });
+      const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+      const emailResult = await sendOfflineEmail({ id_ap, nama, ip_address, lokasi, waktu });
+      if (!emailResult.success) {
+        console.error(`[scheduler] Email offline gagal terkirim untuk AP id=${id_ap}: ${emailResult.error}`);
+      }
       await prisma.notifikasi.create({
         data: {
           id_ap,
-          pesan: `AP ${nama} (${ip_address}) OFFLINE${notif.success ? '' : ' [gagal kirim WA]'}`,
+          pesan: `AP ${nama} (${ip_address}) OFFLINE${emailResult.success ? '' : ' [gagal kirim email]'}`,
         },
       });
     }
@@ -74,7 +77,7 @@ async function processDeviceResult(result, idSesi) {
         prisma.log.create({ data: { id_ap, id_sesi: idSesi, status: 'online', response_time: responseTime } }),
       ]);
 
-      const waktu = new Date().toLocaleString('id-ID');
+      const waktu = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
       const notif = await sendStatusNotification({ nama, ip_address, status: 'online', waktu });
       await prisma.notifikasi.create({
         data: {
