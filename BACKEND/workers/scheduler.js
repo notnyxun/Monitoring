@@ -62,7 +62,7 @@ async function processDeviceResult(result, idSesi) {
       await prisma.notifikasi.create({
         data: {
           id_ap,
-          pesan: `AP ${nama} (${ip_address}) OFFLINE${emailResult.success ? '' : ' [gagal kirim email]'}`,
+          pesan: `AP ${nama} (${ip_address}) OFFLINE${emailResult.success ? '' : ' [Email gagal terkirim]'}`,
         },
       });
     }
