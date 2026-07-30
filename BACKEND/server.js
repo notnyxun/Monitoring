@@ -16,7 +16,7 @@ app.use(cors());
 app.use(express.json());
 
 
-app.get('/api/health', async (req, res) => {
+app.get('/', async (req, res) => {
   try {
     const totalAp = await prisma.access_point.count();
     res.json({ message: 'Backend Node.js berjalan normal!', total_access_point: totalAp });
@@ -24,6 +24,8 @@ app.get('/api/health', async (req, res) => {
     res.status(500).json({ message: 'Gagal konek ke database via Prisma', error: err.message });
   }
 });
+
+
 
 app.use('/api', deviceRoutes); 
 app.use('/api', lantaiRoutes); 
