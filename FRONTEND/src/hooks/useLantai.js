@@ -23,5 +23,5 @@ export const useLantai = () => {
     return () => clearInterval(interval);
   }, [fetchLantai]);
 
-  return { lantai, loading };
+  return { lantai, loading, refetch: fetchLantai };
 };

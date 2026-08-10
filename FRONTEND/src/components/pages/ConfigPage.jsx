@@ -4,23 +4,82 @@ import { useLantai } from '../../hooks/useLantai';
 
 export const ConfigPage = () => {
   const { devices, loading: devicesLoading } = useDevices();
-  const { lantai: lantaiList, loading: lantaiLoading } = useLantai();
+  const { lantai: lantaiList, loading: lantaiLoading, refetch: refreshLantai } = useLantai();
   const [error, setError] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [editingDevice, setEditingDevice] = useState(null);
   const [formData, setFormData] = useState({ nama: '', ip_address: '', lokasi: '', id_lantai: '' });
+  const [floorInput, setFloorInput] = useState('');
   const [formError, setFormError] = useState(null);
 
   const API_URL = 'http://localhost:3000/api';
 
+  const syncFloorInput = (value) => {
+    const normalizedValue = value.trim();
+    setFloorInput(normalizedValue);
+
+    if (!normalizedValue) {
+      setFormData((prev) => ({ ...prev, id_lantai: '' }));
+      return;
+    }
+
+    const matchedFloor = lantaiList.find(
+      (item) => item.nama_lantai.toLowerCase() === normalizedValue.toLowerCase()
+    );
+
+    setFormData((prev) => ({
+      ...prev,
+      id_lantai: matchedFloor ? String(matchedFloor.id_lantai) : '',
+    }));
+  };
+
+  const ensureFloorExists = async (value) => {
+    const normalizedValue = value.trim();
+    if (!normalizedValue) {
+      return null;
+    }
+
+    const matchedFloor = lantaiList.find(
+      (item) => item.nama_lantai.toLowerCase() === normalizedValue.toLowerCase()
+    );
+
+    if (matchedFloor) {
+      setFormData((prev) => ({ ...prev, id_lantai: String(matchedFloor.id_lantai) }));
+      return matchedFloor;
+    }
+
+    try {
+      const res = await fetch(`${API_URL}/lantai`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nama_lantai: normalizedValue }),
+      });
+      const json = await res.json();
+
+      if (!json.success) {
+        throw new Error(json.error?.message || 'Gagal menyimpan nama lantai');
+      }
+
+      await refreshLantai();
+      const savedFloor = json.data;
+      setFormData((prev) => ({ ...prev, id_lantai: String(savedFloor.id_lantai) }));
+      return savedFloor;
+    } catch (err) {
+      throw new Error(err.message || 'Gagal menyimpan nama lantai');
+    }
+  };
+
   const openAddModal = () => {
     setEditingDevice(null);
     setFormData({ nama: '', ip_address: '', lokasi: '', id_lantai: '' });
+    setFloorInput('');
     setFormError(null);
     setShowModal(true);
   };
 
   const openEditModal = (device) => {
+    const selectedFloorName = device.lantai?.nama_lantai || '';
+
     setEditingDevice(device);
     setFormData({
       nama: device.nama,
@@ -28,22 +87,36 @@ export const ConfigPage = () => {
       lokasi: device.lokasi || '',
       id_lantai: device.id_lantai || '',
     });
+    setFloorInput(selectedFloorName);
     setFormError(null);
     setShowModal(true);
   };
 
   const handleSubmit = async () => {
     setFormError(null);
-    const isEdit = Boolean(editingDevice);
-    const url = isEdit ? `${API_URL}/devices/${editingDevice.id_ap}` : `${API_URL}/devices`;
-    const method = isEdit ? 'PUT' : 'POST';
 
-    const payload = {
-      ...formData,
-      id_lantai: formData.id_lantai ? Number(formData.id_lantai) : undefined,
-    };
+    const normalizedFloor = floorInput.trim();
+    if (!normalizedFloor) {
+      setFormError('Nama lantai wajib diisi');
+      return;
+    }
 
     try {
+      const savedFloor = await ensureFloorExists(normalizedFloor);
+      if (!savedFloor) {
+        setFormError('Nama lantai tidak valid');
+        return;
+      }
+
+      const isEdit = Boolean(editingDevice);
+      const url = isEdit ? `${API_URL}/devices/${editingDevice.id_ap}` : `${API_URL}/devices`;
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const payload = {
+        ...formData,
+        id_lantai: Number(savedFloor.id_lantai),
+      };
+
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
@@ -55,10 +128,10 @@ export const ConfigPage = () => {
         return;
       }
       setShowModal(false);
-      // Di development mode dengan mock data, tidak perlu refresh
       setFormData({ nama: '', ip_address: '', lokasi: '', id_lantai: '' });
-    } catch {
-      setFormError('Tidak bisa terhubung ke server');
+      setFloorInput('');
+    } catch (err) {
+      setFormError(err.message || 'Tidak bisa terhubung ke server');
     }
   };
 
@@ -95,7 +168,7 @@ export const ConfigPage = () => {
           onClick={openAddModal} 
           className="bg-[#1565c0] hover:bg-[#0d47a1] text-white px-4 py-2 rounded text-sm font-bold transition-colors"
         >
-          + Tambah Perangkat
+          Tambah Perangkat
         </button>
       </div>
 
@@ -165,16 +238,18 @@ export const ConfigPage = () => {
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Lantai</label>
-                <select
-                  value={formData.id_lantai}
-                  onChange={(e) => setFormData({ ...formData, id_lantai: e.target.value })}
+                <input
+                  list="lantai-options"
+                  value={floorInput}
+                  onChange={(e) => syncFloorInput(e.target.value)}
+                  placeholder="Masukkan nama lantai"
                   className="w-full p-2 border rounded-md text-sm bg-white"
-                >
-                  <option value="">-- Pilih Lantai --</option>
+                />
+                <datalist id="lantai-options">
                   {lantaiList.map((l) => (
-                    <option key={l.id_lantai} value={l.id_lantai}>{l.nama_lantai}</option>
+                    <option key={l.id_lantai} value={l.nama_lantai} />
                   ))}
-                </select>
+                </datalist>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Lokasi (contoh: Ruang Komisi B)</label>
