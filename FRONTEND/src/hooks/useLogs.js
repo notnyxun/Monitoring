@@ -15,8 +15,12 @@ export const useLogs = (page = 1, perPage = 25) => {
       .then((json) => {
         if (json.success) {
           setLogs(json.data);
-          setSummary(json.summary);
-          setPagination({ total: json.pagination.total, totalPages: json.pagination.totalPages });
+          setSummary(json.summary || { total: 0, online: 0, offline: 0 });
+          setPagination(
+            json.pagination
+              ? { total: json.pagination.total, totalPages: json.pagination.totalPages }
+              : { total: 0, totalPages: 1 }
+          );
         }
       })
       .catch(() => {})
@@ -29,5 +33,5 @@ export const useLogs = (page = 1, perPage = 25) => {
     return () => clearInterval(interval);
   }, [fetchLogs]);
 
-  return { logs, loading, summary, pagination };
+  return { logs, loading, summary, pagination, refetch: fetchLogs };
 };
