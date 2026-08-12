@@ -87,6 +87,16 @@ router.get('/logs', async (req, res) => {
   }
 });
 
+/* DELETE /api/logs, hapus seluruh riwayat log. */
+router.delete('/logs', async (req, res) => {
+  try {
+    const result = await prisma.log.deleteMany({});
+    res.json({ success: true, data: { deleted_count: result.count } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: { message: err.message } });
+  }
+});
+
 const { z } = require('zod');
 
 /* Regex IPv4 agar input IP sesuai standar. */
