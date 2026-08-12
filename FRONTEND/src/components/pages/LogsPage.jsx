@@ -1,11 +1,16 @@
+import { useState } from 'react';
 import { useLogs } from '../../hooks/useLogs';
+import { Pagination } from '../shared';
 
 export const LogsPage = () => {
-  const { logs, loading } = useLogs();
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(25);
+  const { logs, loading, summary, pagination } = useLogs(page, perPage);
 
-  const total = logs.length;
-  const kembaliOnline = logs.filter((l) => l.status === 'online').length;
-  const offline = logs.filter((l) => l.status === 'offline').length;
+  const handlePerPageChange = (newPerPage) => {
+    setPerPage(newPerPage);
+    setPage(1); // balik ke halaman 1 tiap ganti jumlah per halaman
+  };
 
   if (loading) return <div className="p-8 text-gray-500">Memuat log...</div>;
 
@@ -19,15 +24,15 @@ export const LogsPage = () => {
       <div className="grid grid-cols-3 gap-6 mb-8">
         <div className="bg-white p-5 rounded-lg border">
           <span className="text-xs font-bold text-gray-500">TOTAL LOG</span>
-          <span className="block text-3xl font-bold mt-2">{total}</span>
+          <span className="block text-3xl font-bold mt-2">{summary.total}</span>
         </div>
         <div className="bg-white p-5 rounded-lg border border-green-400">
           <span className="text-xs font-bold text-gray-500">ACCESS POINT KEMBALI ONLINE</span>
-          <span className="block text-3xl font-bold text-green-500 mt-2">{kembaliOnline}</span>
+          <span className="block text-3xl font-bold text-green-500 mt-2">{summary.online}</span>
         </div>
         <div className="bg-white p-5 rounded-lg border border-red-400">
           <span className="text-xs font-bold text-gray-500">ACCESS POINT OFFLINE</span>
-          <span className="block text-3xl font-bold text-red-500 mt-2">{offline}</span>
+          <span className="block text-3xl font-bold text-red-500 mt-2">{summary.offline}</span>
         </div>
       </div>
 
@@ -56,6 +61,16 @@ export const LogsPage = () => {
             ))}
           </tbody>
         </table>
+
+        <Pagination
+          total={pagination.total}
+          page={page}
+          perPage={perPage}
+          totalPages={pagination.totalPages}
+          onPageChange={setPage}
+          onPerPageChange={handlePerPageChange}
+          label="Log"
+        />
       </div>
     </div>
   );
