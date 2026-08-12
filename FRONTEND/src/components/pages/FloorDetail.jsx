@@ -12,7 +12,7 @@ export const FloorDetail = ({ idLantai }) => {
   return (
     <div className="p-8">
       <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="bg-white p-5 rounded-lg border"><span className="text-xs font-bold text-gray-500">TOTAL AP</span><span className="block text-3xl font-bold mt-2">{total}</span></div>
+        <div className="bg-white p-5 rounded-lg border"><span className="text-xs font-bold text-gray-500">TOTAL ACCESS POINT</span><span className="block text-3xl font-bold mt-2">{total}</span></div>
         <div className="bg-white p-5 rounded-lg border border-green-400"><span className="text-xs font-bold text-gray-500">ONLINE</span><span className="block text-3xl font-bold text-green-500 mt-2">{online}</span></div>
         <div className="bg-white p-5 rounded-lg border border-red-400"><span className="text-xs font-bold text-gray-500">OFFLINE</span><span className="block text-3xl font-bold text-red-500 mt-2">{offline}</span></div>
       </div>

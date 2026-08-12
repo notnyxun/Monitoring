@@ -1,13 +1,10 @@
-import { useLantai } from '../../hooks/useLantai';
-import { useLogs } from '../../hooks/useLogs';
+import { useLantai } from "../../hooks/useLantai";
+import { useSummary } from "../../hooks/useSummary";
 
 export const DashboardHome = ({ onSelectFloor }) => {
-  const { lantai } = useLantai();
-  const { logs, loading } = useLogs();
-
-  const totalLogs = logs.length;
-  const kembaliOnline = logs.filter((log) => log.status === 'online').length;
-  const sedangOffline = logs.filter((log) => log.status === 'offline').length;
+  const { lantai, loading: loadingLantai } = useLantai();
+  const { summary, loading: loadingSummary } = useSummary();
+  const loading = loadingLantai || loadingSummary;
 
   if (loading) {
     return <div className="p-8 text-gray-500">Memuat dashboard...</div>;
@@ -17,21 +14,33 @@ export const DashboardHome = ({ onSelectFloor }) => {
     <div className="p-8">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Topologi Sistem</h2>
-        <p className="text-sm text-gray-500 mt-1">Pilih lantai untuk memantau status Access Point.</p>
+        <p className="text-sm text-gray-500 mt-1">
+          Pilih lantai untuk memantau status Access Point.
+        </p>
       </div>
 
       <div className="grid grid-cols-3 gap-6 mb-8">
         <div className="bg-white p-5 rounded-lg border">
-          <span className="text-xs font-bold text-gray-500">TOTAL LOG</span>
-          <span className="block text-3xl font-bold mt-2">{totalLogs}</span>
+          <span className="text-xs font-bold text-gray-500">
+            TOTAL ACCESS POINT
+          </span>
+          <span className="block text-3xl font-bold mt-2">{summary.total}</span>
         </div>
         <div className="bg-white p-5 rounded-lg border border-green-400">
-          <span className="text-xs font-bold text-gray-500">ACCESS POINT KEMBALI ONLINE</span>
-          <span className="block text-3xl font-bold text-green-500 mt-2">{kembaliOnline}</span>
+          <span className="text-xs font-bold text-gray-500">
+            ONLINE
+          </span>
+          <span className="block text-3xl font-bold text-green-500 mt-2">
+            {summary.online}
+          </span>
         </div>
         <div className="bg-white p-5 rounded-lg border border-red-400">
-          <span className="text-xs font-bold text-gray-500">ACCESS POINT SEDANG OFFLINE</span>
-          <span className="block text-3xl font-bold text-red-500 mt-2">{sedangOffline}</span>
+          <span className="text-xs font-bold text-gray-500">
+            OFFLINE
+          </span>
+          <span className="block text-3xl font-bold text-red-500 mt-2">
+            {summary.offline}
+          </span>
         </div>
       </div>
 
@@ -45,20 +54,38 @@ export const DashboardHome = ({ onSelectFloor }) => {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center shrink-0">
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    ></path>
                   </svg>
                 </div>
 
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-white truncate">{floor.nama_lantai.toUpperCase()}</h3>
-                  <p className="text-[11px] text-blue-200 mt-1">{floor.total} Access Points</p>
+                  <h3 className="text-sm font-bold text-white truncate">
+                    {floor.nama_lantai.toUpperCase()}
+                  </h3>
+                  <p className="text-[11px] text-blue-200 mt-1">
+                    {floor.total} Access Points
+                  </p>
                 </div>
               </div>
 
               <div className="text-right shrink-0 ml-2">
-                <p className="text-[10px] text-green-400">{floor.online} online</p>
-                <p className="text-[10px] text-red-400 mt-1">{floor.offline} offline</p>
+                <p className="text-[10px] text-green-400">
+                  {floor.online} online
+                </p>
+                <p className="text-[10px] text-red-400 mt-1">
+                  {floor.offline} offline
+                </p>
               </div>
             </div>
           ))}
