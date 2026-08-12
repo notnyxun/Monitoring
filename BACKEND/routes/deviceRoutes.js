@@ -7,21 +7,37 @@ const router = express.Router();
 router.get('/devices', async (req, res) => {
   try {
     const { id_lantai } = req.query;
-    const devices = await prisma.access_point.findMany({
-      where: id_lantai ? { id_lantai: Number(id_lantai) } : undefined,
-      select: {
-        id_ap: true,
-        nama: true,
-        ip_address: true,
-        lokasi: true,
-        id_lantai: true,
-        status_terakhir: true,
-        updated_at: true,
-        lantai: { select: { nama_lantai: true } },
-      },
-      orderBy: { nama: 'asc' },
+    const where = id_lantai ? { id_lantai: Number(id_lantai) } : undefined;
+    const hasPagination = req.query.page !== undefined || req.query.perPage !== undefined;
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const perPage = Math.max(1, Number(req.query.perPage) || 25);
+
+    const [total, devices] = await Promise.all([
+      prisma.access_point.count({ where }),
+      prisma.access_point.findMany({
+        where,
+        select: {
+          id_ap: true,
+          nama: true,
+          ip_address: true,
+          lokasi: true,
+          id_lantai: true,
+          status_terakhir: true,
+          updated_at: true,
+          lantai: { select: { nama_lantai: true } },
+        },
+        orderBy: { nama: 'asc' },
+        ...(hasPagination ? { skip: (page - 1) * perPage, take: perPage } : {}),
+      }),
+    ]);
+
+    res.json({
+      success: true,
+      data: devices,
+      pagination: hasPagination
+        ? { page, perPage, total, totalPages: Math.max(1, Math.ceil(total / perPage)) }
+        : { page: 1, perPage: total || 1, total, totalPages: 1 },
     });
-    res.json({ success: true, data: devices });
   } catch (err) {
     res.status(500).json({ success: false, error: { message: err.message } });
   }
@@ -42,15 +58,30 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-/* GET /api/logs, diambil 200 log terakhir, untuk halaman Logs. */
+/* GET /api/logs, log dengan pagination + ringkasan status untuk halaman Logs. */
 router.get('/logs', async (req, res) => {
   try {
-    const logs = await prisma.log.findMany({
-      take: 200,
-      orderBy: { waktu_ping: 'desc' },
-      include: { access_point: { select: { nama: true, ip_address: true } } },
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const perPage = Math.max(1, Number(req.query.perPage) || 25);
+
+    const [total, onlineCount, offlineCount, logs] = await Promise.all([
+      prisma.log.count(),
+      prisma.log.count({ where: { status: 'online' } }),
+      prisma.log.count({ where: { status: 'offline' } }),
+      prisma.log.findMany({
+        skip: (page - 1) * perPage,
+        take: perPage,
+        orderBy: { waktu_ping: 'desc' },
+        include: { access_point: { select: { nama: true, ip_address: true } } },
+      }),
+    ]);
+
+    res.json({
+      success: true,
+      data: logs,
+      summary: { total, online: onlineCount, offline: offlineCount },
+      pagination: { page, perPage, total, totalPages: Math.max(1, Math.ceil(total / perPage)) },
     });
-    res.json({ success: true, data: logs });
   } catch (err) {
     res.status(500).json({ success: false, error: { message: err.message } });
   }
@@ -97,7 +128,7 @@ router.put('/devices/:id', async (req, res) => {
     return res.status(400).json({ success: false, error: { message: 'ID tidak valid' } });
   }
 
-  const parsed = deviceSchema.partial().safeParse(req.body); // .partial() -> field boleh sebagian saja
+  const parsed = deviceSchema.partial().safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ success: false, error: { message: parsed.error.issues[0].message } });
   }
