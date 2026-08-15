@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const API_URL = 'http://localhost:3000/api';
-const REFRESH_INTERVAL = 2000; // satuannya ms, sama dengan interval cron (10s) <- bisa disesuaikan
+const REFRESH_INTERVAL = 2000;
 
 export const useNotifikasi = () => {
   const [notifikasiList, setNotifikasiList] = useState([]);
@@ -23,5 +23,5 @@ export const useNotifikasi = () => {
     return () => clearInterval(interval);
   }, [fetchNotifikasi]);
 
-  return { notifikasiList, loading };
+  return { notifikasiList, loading, refetch: fetchNotifikasi };
 };

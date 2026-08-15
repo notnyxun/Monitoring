@@ -8,6 +8,7 @@ export const MainLayout = ({
   selectedFloor, 
   navigateTo, 
   notifikasiList, 
+  onNotifikasiCleared,
   children 
 }) => {
   const [showNotifModal, setShowNotifModal] = useState(false);
@@ -42,6 +43,7 @@ export const MainLayout = ({
         notifikasiList={notifikasiList} 
         isOpen={showNotifModal} 
         onClose={() => setShowNotifModal(false)} 
+        onCleared={onNotifikasiCleared}
       />
     </div>
   );

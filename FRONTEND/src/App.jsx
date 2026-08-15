@@ -10,7 +10,7 @@ import { useNotifikasi, useNavigation } from './hooks';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const { notifikasiList } = useNotifikasi();
+  const { notifikasiList, refetch: refetchNotifikasi } = useNotifikasi();
   const { activePage, selectedFloor, navigateTo, selectFloor } = useNavigation();
 
   // Jika belum login, tampilkan halaman login
@@ -42,6 +42,7 @@ export default function App() {
       selectedFloor={selectedFloor}
       navigateTo={navigateTo}
       notifikasiList={notifikasiList}
+      onNotifikasiCleared={refetchNotifikasi}
     >
       {renderPageContent()}
     </MainLayout>
