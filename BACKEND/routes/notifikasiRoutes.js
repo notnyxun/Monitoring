@@ -17,4 +17,14 @@ router.get('/notifikasi', async (req, res) => {
   }
 });
 
+/* DELETE /api/notifikasi, hapus seluruh riwayat notifikasi. */
+router.delete('/notifikasi', async (req, res) => {
+  try {
+    const result = await prisma.notifikasi.deleteMany({});
+    res.json({ success: true, data: { deleted_count: result.count } });
+  } catch (err) {
+    res.status(500).json({ success: false, error: { message: err.message } });
+  }
+});
+
 module.exports = router;
