@@ -1,105 +1,89 @@
+// routes/deviceRoutes.js
 const express = require('express');
-const prisma = require('../prisma/prisma.dbPool');
+const { z } = require('zod');
+const pool = require('../config/db');
 
 const router = express.Router();
 
-/* GET /api/devices, daftar semua AP dan status terakhirnya. */
 router.get('/devices', async (req, res) => {
   try {
     const { id_lantai } = req.query;
-    const where = id_lantai ? { id_lantai: Number(id_lantai) } : undefined;
-    const hasPagination = req.query.page !== undefined || req.query.perPage !== undefined;
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const perPage = Math.max(1, Number(req.query.perPage) || 25);
+    let sql = `
+      SELECT ap.id_ap, ap.nama, ap.ip_address, ap.lokasi, ap.id_lantai,
+             ap.status_terakhir, ap.updated_at, l.nama_lantai
+      FROM access_point ap
+      LEFT JOIN lantai l ON l.id_lantai = ap.id_lantai
+    `;
+    const params = [];
+    if (id_lantai) {
+      sql += ' WHERE ap.id_lantai = ?';
+      params.push(Number(id_lantai));
+    }
+    sql += ' ORDER BY ap.nama ASC';
 
-    const [total, devices] = await Promise.all([
-      prisma.access_point.count({ where }),
-      prisma.access_point.findMany({
-        where,
-        select: {
-          id_ap: true,
-          nama: true,
-          ip_address: true,
-          lokasi: true,
-          id_lantai: true,
-          status_terakhir: true,
-          updated_at: true,
-          lantai: { select: { nama_lantai: true } },
-        },
-        orderBy: { nama: 'asc' },
-        ...(hasPagination ? { skip: (page - 1) * perPage, take: perPage } : {}),
-      }),
-    ]);
-
-    res.json({
-      success: true,
-      data: devices,
-      pagination: hasPagination
-        ? { page, perPage, total, totalPages: Math.max(1, Math.ceil(total / perPage)) }
-        : { page: 1, perPage: total || 1, total, totalPages: 1 },
-    });
+    const [rows] = await pool.query(sql, params);
+    const data = rows.map((r) => ({
+      id_ap: r.id_ap,
+      nama: r.nama,
+      ip_address: r.ip_address,
+      lokasi: r.lokasi,
+      id_lantai: r.id_lantai,
+      status_terakhir: r.status_terakhir,
+      updated_at: r.updated_at,
+      lantai: r.nama_lantai ? { nama_lantai: r.nama_lantai } : null,
+    }));
+    res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: { message: err.message } });
   }
 });
 
-/* GET /api/summary, ringkasan total (belum ada di frontend, baru fungsi untuk testing http req, kemungkinan dihapus). */
 router.get('/summary', async (req, res) => {
   try {
-    const [total, online, offline, unknown] = await Promise.all([
-      prisma.access_point.count(),
-      prisma.access_point.count({ where: { status_terakhir: 'online' } }),
-      prisma.access_point.count({ where: { status_terakhir: 'offline' } }),
-      prisma.access_point.count({ where: { status_terakhir: 'unknown' } }),
-    ]);
-    res.json({ success: true, data: { total, online, offline, unknown } });
-  } catch (err) {
-    res.status(500).json({ success: false, error: { message: err.message } });
-  }
-});
-
-/* GET /api/logs, log dengan pagination + ringkasan status untuk halaman Logs. */
-router.get('/logs', async (req, res) => {
-  try {
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const perPage = Math.max(1, Number(req.query.perPage) || 25);
-
-    const [total, onlineCount, offlineCount, logs] = await Promise.all([
-      prisma.log.count(),
-      prisma.log.count({ where: { status: 'online' } }),
-      prisma.log.count({ where: { status: 'offline' } }),
-      prisma.log.findMany({
-        skip: (page - 1) * perPage,
-        take: perPage,
-        orderBy: { waktu_ping: 'desc' },
-        include: { access_point: { select: { nama: true, ip_address: true } } },
-      }),
-    ]);
-
+    const [[row]] = await pool.query(`
+      SELECT
+        COUNT(*) AS total,
+        SUM(status_terakhir = 'online') AS online,
+        SUM(status_terakhir = 'offline') AS offline,
+        SUM(status_terakhir = 'unknown') AS unknown
+      FROM access_point
+    `);
     res.json({
       success: true,
-      data: logs,
-      summary: { total, online: onlineCount, offline: offlineCount },
-      pagination: { page, perPage, total, totalPages: Math.max(1, Math.ceil(total / perPage)) },
+      data: {
+        total: Number(row.total),
+        online: Number(row.online),
+        offline: Number(row.offline),
+        unknown: Number(row.unknown),
+      },
     });
   } catch (err) {
     res.status(500).json({ success: false, error: { message: err.message } });
   }
 });
 
-/* DELETE /api/logs, hapus seluruh riwayat log. */
-router.delete('/logs', async (req, res) => {
+router.get('/logs', async (req, res) => {
   try {
-    const result = await prisma.log.deleteMany({});
-    res.json({ success: true, data: { deleted_count: result.count } });
+    const [rows] = await pool.query(`
+      SELECT lg.id_log, lg.status, lg.waktu_ping, lg.response_time, ap.nama, ap.ip_address
+      FROM log lg
+      JOIN access_point ap ON ap.id_ap = lg.id_ap
+      ORDER BY lg.waktu_ping DESC
+      LIMIT 200
+    `);
+    const data = rows.map((r) => ({
+      id_log: r.id_log,
+      status: r.status,
+      waktu_ping: r.waktu_ping,
+      response_time: r.response_time,
+      access_point: { nama: r.nama, ip_address: r.ip_address },
+    }));
+    res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: { message: err.message } });
   }
 });
 
-const { z } = require('zod');
-
-/* Regex IPv4 agar input IP sesuai standar. */
 const IPV4_REGEX =
   /^(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])(\.(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])){3}$/;
 
@@ -110,28 +94,28 @@ const deviceSchema = z.object({
   id_lantai: z.number().int().positive().optional(),
 });
 
-/* POST /api/devices, Tambah AP baru. */
 router.post('/devices', async (req, res) => {
   const parsed = deviceSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ success: false, error: { message: parsed.error.issues[0].message } });
   }
+  const { nama, ip_address, lokasi, id_lantai } = parsed.data;
 
   try {
-    const device = await prisma.access_point.create({
-      data: { ...parsed.data, status_terakhir: 'unknown' },
-    });
+    const [result] = await pool.query(
+      'INSERT INTO access_point (nama, ip_address, lokasi, id_lantai, status_terakhir) VALUES (?, ?, ?, ?, ?)',
+      [nama, ip_address, lokasi || null, id_lantai || null, 'unknown']
+    );
+    const [[device]] = await pool.query('SELECT * FROM access_point WHERE id_ap = ?', [result.insertId]);
     res.status(201).json({ success: true, data: device });
   } catch (err) {
-    if (err.code === 'P2002') {
-      /* Pesan kalau IP Address duplikat. */
+    if (err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ success: false, error: { message: 'IP address sudah terdaftar' } });
     }
     res.status(500).json({ success: false, error: { message: err.message } });
   }
 });
 
-/* PUT /api/devices/:id, Ubah data AP. */
 router.put('/devices/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
@@ -143,24 +127,30 @@ router.put('/devices/:id', async (req, res) => {
     return res.status(400).json({ success: false, error: { message: parsed.error.issues[0].message } });
   }
 
+  const fields = parsed.data;
+  const keys = Object.keys(fields);
+  if (keys.length === 0) {
+    return res.status(400).json({ success: false, error: { message: 'Tidak ada field yang diubah' } });
+  }
+
+  const setClause = keys.map((k) => `${k} = ?`).join(', ');
+  const values = keys.map((k) => fields[k]);
+
   try {
-    const device = await prisma.access_point.update({
-      where: { id_ap: id },
-      data: parsed.data,
-    });
-    res.json({ success: true, data: device });
-  } catch (err) {
-    if (err.code === 'P2025') {
+    const [result] = await pool.query(`UPDATE access_point SET ${setClause} WHERE id_ap = ?`, [...values, id]);
+    if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, error: { message: 'AP tidak ditemukan' } });
     }
-    if (err.code === 'P2002') {
+    const [[device]] = await pool.query('SELECT * FROM access_point WHERE id_ap = ?', [id]);
+    res.json({ success: true, data: device });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
       return res.status(409).json({ success: false, error: { message: 'IP address sudah dipakai AP lain' } });
     }
     res.status(500).json({ success: false, error: { message: err.message } });
   }
 });
 
-/* DELETE /api/devices/:id, Hapus AP. */
 router.delete('/devices/:id', async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id) || id <= 0) {
@@ -168,12 +158,12 @@ router.delete('/devices/:id', async (req, res) => {
   }
 
   try {
-    await prisma.access_point.delete({ where: { id_ap: id } });
-    res.json({ success: true, data: { deleted_id: id } });
-  } catch (err) {
-    if (err.code === 'P2025') {
+    const [result] = await pool.query('DELETE FROM access_point WHERE id_ap = ?', [id]);
+    if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, error: { message: 'AP tidak ditemukan' } });
     }
+    res.json({ success: true, data: { deleted_id: id } });
+  } catch (err) {
     res.status(500).json({ success: false, error: { message: err.message } });
   }
 });

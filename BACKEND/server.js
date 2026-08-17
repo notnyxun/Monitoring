@@ -3,7 +3,7 @@ const cors = require('cors');
 
 require('dotenv').config();
 
-const prisma = require('./prisma/prisma.dbPool');
+const pool = require('./config/db');
 const { startScheduler } = require('./workers/scheduler');
 const deviceRoutes = require('./routes/deviceRoutes'); 
 const lantaiRoutes = require('./routes/lantaiRoutes'); 
@@ -15,13 +15,12 @@ const PORT = process.env.PORT || 3000;
 app.use(cors()); 
 app.use(express.json());
 
-
 app.get('/', async (req, res) => {
   try {
-    const totalAp = await prisma.access_point.count();
-    res.json({ message: 'Backend Node.js berjalan normal!', total_access_point: totalAp });
+    const [[row]] = await pool.query('SELECT COUNT(*) AS total FROM access_point');
+    res.json({ message: 'Backend Node.js berjalan normal!', total_access_point: Number(row.total) });
   } catch (err) {
-    res.status(500).json({ message: 'Gagal konek ke database via Prisma', error: err.message });
+    res.status(500).json({ message: 'Gagal konek ke database via MySQL', error: err.message });
   }
 });
 
